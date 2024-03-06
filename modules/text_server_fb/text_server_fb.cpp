@@ -73,7 +73,7 @@ using namespace godot;
 
 /*************************************************************************/
 
-#define OT_TAG(c1, c2, c3, c4) ((int32_t)((((uint32_t)(c1)&0xff) << 24) | (((uint32_t)(c2)&0xff) << 16) | (((uint32_t)(c3)&0xff) << 8) | ((uint32_t)(c4)&0xff)))
+#define OT_TAG(c1, c2, c3, c4) ((int32_t)((((uint32_t)(c1) & 0xff) << 24) | (((uint32_t)(c2) & 0xff) << 16) | (((uint32_t)(c3) & 0xff) << 8) | ((uint32_t)(c4) & 0xff)))
 
 bool TextServerFallback::_has_feature(Feature p_feature) const {
 	switch (p_feature) {
@@ -3617,6 +3617,7 @@ bool TextServerFallback::_shaped_text_update_breaks(const RID &p_shaped) {
 	for (int i = 0; i < sd_size; i++) {
 		if (sd_glyphs[i].count > 0) {
 			char32_t c = sd->text[sd_glyphs[i].start - sd->start];
+			char32_t c_next = i < sd_size ? sd->text[sd_glyphs[i].start - sd->start + 1] : 0x0000;
 			if (c_punct_size == 0) {
 				if (is_punct(c) && c != 0x005F && c != ' ') {
 					sd_glyphs[i].flags |= GRAPHEME_IS_PUNCTUATION;
@@ -3640,7 +3641,9 @@ bool TextServerFallback::_shaped_text_update_breaks(const RID &p_shaped) {
 			}
 			if (is_linebreak(c)) {
 				sd_glyphs[i].flags |= GRAPHEME_IS_SPACE;
-				sd_glyphs[i].flags |= GRAPHEME_IS_BREAK_HARD;
+				if (c != 0x000D || c_next != 0x000A) { // Skip first hard break in CR-LF pair.
+					sd_glyphs[i].flags |= GRAPHEME_IS_BREAK_HARD;
+				}
 			}
 			if (c == 0x0009 || c == 0x000b) {
 				sd_glyphs[i].flags |= GRAPHEME_IS_TAB;
